@@ -1,6 +1,7 @@
 version: '3.9'
 services:
   app:
+    container_name: app
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,9 +10,10 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - ./:/app
+      - ./:/app:z
 
   postgres:
+    container_name: postgres
     image: postgres:latest
     environment:
       POSTGRES_USER: postgres
@@ -20,4 +22,5 @@ services:
     command: [ "postgres", "-c", "log_statement=all" ]
 
   redis:
+    container_name: redis
     image: redis:latest
