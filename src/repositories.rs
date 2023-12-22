@@ -1,4 +1,4 @@
-use crate::models::{Crate, NewCreate, NewRustacean, Rustacean};
+use crate::models::{Crate, NewCrate, NewRustacean, Rustacean};
 use crate::schema::{crates, rustaceans};
 use diesel::{ExpressionMethods, QueryDsl, QueryResult};
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
@@ -57,15 +57,15 @@ impl CrateRepository {
         crates::table.limit(limit).get_results(c).await
     }
 
-    pub async fn create(c: &mut AsyncPgConnection, new_crate: NewCreate) -> QueryResult<Crate> {
+    pub async fn create(c: &mut AsyncPgConnection, new_crate: NewCrate) -> QueryResult<Crate> {
         diesel::insert_into(crates::table)
             .values(new_crate)
             .get_result(c)
             .await
     }
 
-    pub async fn update(c: &mut AsyncPgConnection, a_crate: Crate) -> QueryResult<Crate> {
-        diesel::update(crates::table.find(a_crate.id))
+    pub async fn update(c: &mut AsyncPgConnection, id: i32, a_crate: Crate) -> QueryResult<Crate> {
+        diesel::update(crates::table.find(id))
             .set((
                 crates::rustacean_id.eq(a_crate.rustacean_id),
                 crates::code.eq(a_crate.code),

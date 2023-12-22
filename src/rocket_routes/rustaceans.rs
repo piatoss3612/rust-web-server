@@ -1,6 +1,6 @@
 use crate::models::{NewRustacean, Rustacean};
 use crate::repositories::RustaceanRepository;
-use crate::DbConn;
+use crate::rocket_routes::DbConn;
 use rocket::http::Status;
 use rocket::response::status::{Custom, NoContent};
 use rocket::serde::json::{json, Json, Value};
