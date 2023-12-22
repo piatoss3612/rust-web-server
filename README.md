@@ -29,3 +29,9 @@ $ docker exec -it app diesel migration run
 Running migration 2023-12-22-020545_create_rustaceans
 Running migration 2023-12-22-020550_crates
 ```
+
+## Run App
+
+```bash
+$ docker exec -it app cargo run
+```

@@ -7,6 +7,10 @@ services:
       dockerfile: Dockerfile
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/app_db
+      - |
+        ROCKET_DATABASES={
+          postgres={url=postgres://postgres:postgres@postgres/app_db}
+        }
     ports:
       - 8000:8000
     volumes:
