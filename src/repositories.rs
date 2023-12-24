@@ -1,5 +1,7 @@
-use crate::models::{Crate, NewCrate, NewRole, NewRustacean, NewUser, Role, Rustacean, User};
-use crate::schema::{crates, roles, rustaceans, users};
+use crate::models::{
+    Crate, NewCrate, NewRole, NewRustacean, NewUser, NewUserRole, Role, Rustacean, User, UserRole,
+};
+use crate::schema::{crates, roles, rustaceans, users, users_roles};
 use diesel::{ExpressionMethods, QueryDsl, QueryResult};
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
@@ -85,17 +87,70 @@ impl CrateRepository {
 pub struct UserRepository;
 
 impl UserRepository {
-    pub async fn create(c: &mut AsyncPgConnection, new_user: NewUser) -> QueryResult<User> {
-        diesel::insert_into(users::table)
+    pub async fn create(
+        c: &mut AsyncPgConnection,
+        new_user: NewUser,
+        role_codes: Vec<String>,
+    ) -> QueryResult<User> {
+        let user: User = diesel::insert_into(users::table)
             .values(new_user)
             .get_result(c)
-            .await
+            .await?;
+
+        for role_code in role_codes {
+            let new_user_role = {
+                if let Ok(role) = RoleRepository::find_by_code(c, role_code.to_owned()).await {
+                    NewUserRole {
+                        user_id: user.id,
+                        role_id: role.id,
+                    }
+                } else {
+                    let new_role = NewRole {
+                        code: role_code.to_owned(),
+                        name: role_code.to_owned(),
+                    };
+
+                    let role = RoleRepository::create(c, new_role).await?;
+                    NewUserRole {
+                        user_id: user.id,
+                        role_id: role.id,
+                    }
+                }
+            };
+
+            diesel::insert_into(users_roles::table)
+                .values(new_user_role)
+                .get_result::<UserRole>(c)
+                .await?;
+        }
+
+        Ok(user)
     }
 }
 
 pub struct RoleRepository;
 
 impl RoleRepository {
+    pub async fn find_by_ids(c: &mut AsyncPgConnection, ids: Vec<i32>) -> QueryResult<Vec<Role>> {
+        roles::table
+            .filter(roles::id.eq_any(ids))
+            .get_results(c)
+            .await
+    }
+
+    pub async fn find_by_code(c: &mut AsyncPgConnection, code: String) -> QueryResult<Role> {
+        roles::table.filter(roles::code.eq(code)).first(c).await
+    }
+
+    pub async fn find_by_user(c: &mut AsyncPgConnection, user: &User) -> QueryResult<Vec<Role>> {
+        roles::table
+            .inner_join(users_roles::table)
+            .filter(users_roles::user_id.eq(user.id))
+            .select(roles::all_columns)
+            .get_results(c)
+            .await
+    }
+
     pub async fn create(c: &mut AsyncPgConnection, new_role: NewRole) -> QueryResult<Role> {
         diesel::insert_into(roles::table)
             .values(new_role)
