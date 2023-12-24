@@ -1,8 +1,10 @@
 use clap::{Arg, Command};
+use rust_web_server::commands::{create_user, delete_user, list_users};
 
 extern crate rust_web_server;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let matches = Command::new("Cr8s")
         .about("Cr8s commands")
         .arg_required_else_help(true)
@@ -35,9 +37,28 @@ fn main() {
 
     match matches.subcommand() {
         Some(("users", sub_matches)) => match sub_matches.subcommand() {
-            Some(("create", _)) => {}
-            Some(("list", _)) => {}
-            Some(("delete", _)) => {}
+            Some(("create", sub_matches)) => {
+                create_user(
+                    sub_matches
+                        .get_one::<String>("username")
+                        .unwrap()
+                        .to_owned(),
+                    sub_matches
+                        .get_one::<String>("password")
+                        .unwrap()
+                        .to_owned(),
+                    sub_matches
+                        .get_many::<String>("roles")
+                        .unwrap()
+                        .map(|v| v.to_owned())
+                        .collect(),
+                )
+                .await
+            }
+            Some(("list", _)) => list_users().await,
+            Some(("delete", sub_matches)) => {
+                delete_user(sub_matches.get_one::<i32>("id").unwrap().to_owned()).await
+            }
             _ => {}
         },
         _ => {}

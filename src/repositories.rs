@@ -1,5 +1,5 @@
-use crate::models::{Crate, NewCrate, NewRustacean, Rustacean};
-use crate::schema::{crates, rustaceans};
+use crate::models::{Crate, NewCrate, NewRole, NewRustacean, NewUser, Role, Rustacean, User};
+use crate::schema::{crates, roles, rustaceans, users};
 use diesel::{ExpressionMethods, QueryDsl, QueryResult};
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 
@@ -79,5 +79,27 @@ impl CrateRepository {
 
     pub async fn delete(c: &mut AsyncPgConnection, id: i32) -> QueryResult<usize> {
         diesel::delete(crates::table.find(id)).execute(c).await
+    }
+}
+
+pub struct UserRepository;
+
+impl UserRepository {
+    pub async fn create(c: &mut AsyncPgConnection, new_user: NewUser) -> QueryResult<User> {
+        diesel::insert_into(users::table)
+            .values(new_user)
+            .get_result(c)
+            .await
+    }
+}
+
+pub struct RoleRepository;
+
+impl RoleRepository {
+    pub async fn create(c: &mut AsyncPgConnection, new_role: NewRole) -> QueryResult<Role> {
+        diesel::insert_into(roles::table)
+            .values(new_role)
+            .get_result(c)
+            .await
     }
 }
