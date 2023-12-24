@@ -32,8 +32,16 @@ pub async fn create_user(username: String, password: String, role_codes: Vec<Str
 
 pub async fn list_users() {
     let mut conn = load_db_connection().await;
+
+    let users = UserRepository::find_with_roles(&mut conn).await.unwrap();
+
+    for user in users {
+        println!("{:?}", user);
+    }
 }
 
 pub async fn delete_user(id: i32) {
     let mut conn = load_db_connection().await;
+
+    UserRepository::delete(&mut conn, id).await.unwrap();
 }

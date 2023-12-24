@@ -26,4 +26,4 @@ RUN sudo chown -R piatoss:piatoss /usr/local/cargo
 
 USER piatoss
 
-CMD ["cargo", "watch", "--why", "-x", "build"]
+CMD ["cargo", "watch", "--why", "--", "echo"]

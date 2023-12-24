@@ -1,9 +1,8 @@
-use crate::models::{
-    Crate, NewCrate, NewRole, NewRustacean, NewUser, NewUserRole, Role, Rustacean, User, UserRole,
-};
-use crate::schema::{crates, roles, rustaceans, users, users_roles};
-use diesel::{ExpressionMethods, QueryDsl, QueryResult};
+use diesel::prelude::*;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
+
+use crate::models::*;
+use crate::schema::*;
 
 pub struct RustaceanRepository;
 
@@ -87,6 +86,25 @@ impl CrateRepository {
 pub struct UserRepository;
 
 impl UserRepository {
+    pub async fn find_with_roles(
+        c: &mut AsyncPgConnection,
+    ) -> QueryResult<Vec<(User, Vec<(UserRole, Role)>)>> {
+        let users = users::table.load::<User>(c).await.unwrap();
+        let roles = users_roles::table
+            .inner_join(roles::table)
+            .load::<(UserRole, Role)>(c)
+            .await
+            .unwrap()
+            .grouped_by(&users);
+
+        println!("{:?}", users);
+        println!("{:?}", roles);
+
+        let result: Vec<(User, Vec<(UserRole, Role)>)> = users.into_iter().zip(roles).collect();
+
+        Ok(result)
+    }
+
     pub async fn create(
         c: &mut AsyncPgConnection,
         new_user: NewUser,
@@ -125,6 +143,13 @@ impl UserRepository {
         }
 
         Ok(user)
+    }
+
+    pub async fn delete(c: &mut AsyncPgConnection, id: i32) -> QueryResult<usize> {
+        diesel::delete(users_roles::table.filter(users_roles::user_id.eq(id)))
+            .execute(c)
+            .await?;
+        diesel::delete(users::table.find(id)).execute(c).await
     }
 }
 
